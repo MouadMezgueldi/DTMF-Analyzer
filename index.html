@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTMF Keypad Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c5282;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .screen-panel {
+            background-color: #ffffff;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            min-height: 70px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .screen {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 24px;
+            color: #2d3748;
+            word-wrap: break-word;
+            min-height: 30px;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .key {
+            background: linear-gradient(145deg, #4db8e8, #3b9cc9);
+            border: none;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            user-select: none;
+        }
+
+        .key:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .key:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .key.special {
+            background: linear-gradient(145deg, #718096, #4a5568);
+        }
+
+        .clear-button {
+            background: linear-gradient(145deg, #fc8181, #e53e3e);
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .clear-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .clear-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .key {
+                padding: 15px;
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">DTMF Keypad</div>
+        
+        <div class="screen-panel">
+            <div class="screen" id="screen"></div>
+        </div>
+
+        <div class="keypad">
+            <button class="key" data-key="1">1</button>
+            <button class="key" data-key="2">2</button>
+            <button class="key" data-key="3">3</button>
+            <button class="key" data-key="4">4</button>
+            <button class="key" data-key="5">5</button>
+            <button class="key" data-key="6">6</button>
+            <button class="key" data-key="7">7</button>
+            <button class="key" data-key="8">8</button>
+            <button class="key" data-key="9">9</button>
+            <button class="key special" data-key="*">*</button>
+            <button class="key" data-key="0">0</button>
+            <button class="key special" data-key="#">#</button>
+        </div>
+
+        <button class="clear-button" id="clearBtn">Clear</button>
+    </div>
+
+    <script>
+        // Création du contexte audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Table des fréquences DTMF
+        const dtmfFrequencies = {
+            '1': [697, 1209],
+            '2': [697, 1336],
+            '3': [697, 1477],
+            '4': [770, 1209],
+            '5': [770, 1336],
+            '6': [770, 1477],
+            '7': [852, 1209],
+            '8': [852, 1336],
+            '9': [852, 1477],
+            '*': [941, 1209],
+            '0': [941, 1336],
+            '#': [941, 1477]
+        };
+
+        // Fonction pour jouer le son DTMF
+        function playDTMF(key) {
+            const frequencies = dtmfFrequencies[key];
+            if (!frequencies) return;
+
+            const duration = 0.2; // Durée du son en secondes
+            const now = audioContext.currentTime;
+
+            // Créer deux oscillateurs pour les deux fréquences
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            
+            // Créer un gain pour contrôler le volume
+            const gainNode = audioContext.createGain();
+            
+            // Configurer les oscillateurs
+            osc1.frequency.value = frequencies[0];
+            osc2.frequency.value = frequencies[1];
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            
+            // Connecter les oscillateurs au gain puis au contexte audio
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Configurer l'enveloppe (fade in/out pour éviter les clics)
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + duration - 0.01);
+            gainNode.gain.linearRampToValueAtTime(0, now + duration);
+            
+            // Démarrer et arrêter les oscillateurs
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + duration);
+            osc2.stop(now + duration);
+        }
+
+        // Récupérer les éléments
+        const screen = document.getElementById('screen');
+        const keys = document.querySelectorAll('.key');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Gestionnaire de clic pour les touches
+        keys.forEach(key => {
+            key.addEventListener('click', function() {
+                const keyValue = this.getAttribute('data-key');
+                
+                // Ajouter le caractère à l'écran
+                screen.textContent += keyValue;
+                
+                // Jouer le son DTMF
+                playDTMF(keyValue);
+            });
+        });
+
+        // Gestionnaire pour le bouton Clear
+        clearBtn.addEventListener('click', function() {
+            screen.textContent = '';
+        });
+
+        // Support du clavier physique (optionnel)
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            
+            if (dtmfFrequencies[key]) {
+                screen.textContent += key;
+                playDTMF(key);
+            } else if (key === 'Backspace') {
+                screen.textContent = screen.textContent.slice(0, -1);
+            } else if (key === 'Delete' || key === 'Escape') {
+                screen.textContent = '';
+            }
+        });
+    </script>
+</body>
+</html>
