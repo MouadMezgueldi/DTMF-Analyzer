@@ -1,0 +1,17 @@
+# Scientific computing
+numpy           # calcul scientifique
+scipy           # DSP, find_peaks, etc.
+
+# Audio capture
+sounddevice     # capture audio micro
+# For Linux: sudo apt install portaudio19-dev
+
+# GUI
+PyQt6           # GUI
+pyqtgraph       # affichage graphique temps réel
+
+# Text-to-speech
+pyttsx3         # dire les touches DTMF
+
+
+
